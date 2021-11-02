@@ -22,6 +22,10 @@ impl ByteReader {
         self.bytes.len() - self.position
     }
 
+    pub fn get_position(&self) -> usize {
+        self.position
+    }
+
     pub fn skip_bytes(&mut self, bytes: usize) {
         if bytes > self.bytes_left() {
             self.position = self.bytes.len();
@@ -79,7 +83,8 @@ impl ByteReader {
             return Err(ByteReaderError::NotEnoughData)
         }
 
-        copy_nonoverlapping(self.bytes.as_ptr() as _, ptr, count);
+        copy_nonoverlapping(self.bytes.as_ptr().offset(
+            self.position.try_into().unwrap()) as _, ptr, count);
         self.position = self.position+size_of::<T>()*count;
 
         Ok(())
