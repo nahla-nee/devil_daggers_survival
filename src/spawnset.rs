@@ -40,27 +40,18 @@ impl Spawnset {
         }
 
         let mut byte_reader = ByteReader::new(contents);
-        let mut bytes_left = byte_reader.bytes_left();
-
+        
         let header = Header::from_byte_reader(&mut byte_reader);
-        println!("header bytes read: {}", bytes_left-byte_reader.bytes_left());
-        bytes_left = byte_reader.bytes_left();
-
+        
         let arena = Arena::from_byte_reader(&mut byte_reader);
-        println!("arena bytes read: {}", bytes_left-byte_reader.bytes_left());
-        bytes_left = byte_reader.bytes_left();
-
+        
         let spawns_header = SpawnsHeader::from_byte_reader(&mut byte_reader);
-        println!("spawns header bytes read: {}", bytes_left-byte_reader.bytes_left());
-        bytes_left = byte_reader.bytes_left();
-
+        
         let spawns_count = spawns_header.get_spawns_count() as usize;
         let mut spawns: Vec<Spawn> = Vec::with_capacity(spawns_count);
         for _i in 0..spawns_count {
             spawns.push(Spawn::from_byte_reader(&mut byte_reader))
         }
-        println!("spawns bytes read: {}", bytes_left-byte_reader.bytes_left());
-        bytes_left = byte_reader.bytes_left();
 
         //check world ver
         let spawn_version = header.get_spawn_version();
