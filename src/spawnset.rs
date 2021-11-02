@@ -72,7 +72,7 @@ impl Spawnset {
         Spawnset::new(header, arena, spawns_header, spawns, settings)
     }
 
-    pub fn print(self) {
+    pub fn print(&self) {
         println!("Header:");
         println!("\tspawn_version: {}", self.header.get_spawn_version());
         println!("\tworld_version: {}", self.header.get_world_version());
@@ -105,7 +105,7 @@ impl Spawnset {
         }
 
         if self.header.get_spawn_version() > 4 {
-            let settings = self.settings.unwrap();
+            let settings = self.settings.as_ref().unwrap();
             println!("Settings:");
             println!("\tInitial hand upgrade: {}", settings.get_initial_hand());
             println!("\tAdditional gems: {}", settings.get_additional_gems());

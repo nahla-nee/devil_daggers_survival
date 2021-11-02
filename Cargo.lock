@@ -3,13 +3,6 @@
 version = 3
 
 [[package]]
-name = "RustyDevilDaggersSurvivalEditor"
-version = "0.1.0"
-dependencies = [
- "thiserror",
-]
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -25,6 +18,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38bc8cc6a5f2e3655e0899c1b848643b2562f853f114bfec7be120678e3ace05"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "rusty_devil_daggers_survival_editor"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]
