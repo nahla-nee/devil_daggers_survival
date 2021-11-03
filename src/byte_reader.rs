@@ -1,5 +1,3 @@
-mod byte_reader_error;
-
 use std::intrinsics::copy_nonoverlapping;
 use std::mem::size_of;
 use crate::dd_error::DDError;
@@ -20,10 +18,6 @@ impl ByteReader {
 
     pub fn bytes_left(&self) -> usize {
         self.bytes.len() - self.position
-    }
-
-    pub fn get_position(&self) -> usize {
-        self.position
     }
 
     pub fn skip_bytes(&mut self, bytes: usize) {
