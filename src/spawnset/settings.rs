@@ -1,9 +1,9 @@
 use crate::byte_reader::ByteReader;
 
 pub struct Settings {
-    initial_hand: u8,
-    additional_gems: u32,
-    time_start: Option<f32>
+    pub initial_hand: u8,
+    pub additional_gems: u32,
+    pub time_start: Option<f32>
 }
 
 impl Settings {
@@ -27,29 +27,5 @@ impl Settings {
         }
 
         Self::new(initial_hand, additional_gems, time_start)
-    }
-
-    pub fn get_initial_hand(&self) -> u8 {
-        self.initial_hand
-    }
-
-    pub fn get_additional_gems(&self) -> u32 {
-        self.additional_gems
-    }
-
-    pub fn get_time_start(&self) -> Option<f32> {
-        self.time_start
-    }
-
-    pub fn set_initial_hand(&mut self, val: u8) {
-        self.initial_hand = val
-    }
-
-    pub fn set_additional_gems(&mut self, val: u32) {
-        self.additional_gems = val
-    }
-
-    pub fn set_time_start(&mut self, val: Option<f32>) {
-        self.time_start = val
     }
 }

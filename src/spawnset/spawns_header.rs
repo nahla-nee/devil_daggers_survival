@@ -6,12 +6,12 @@ pub struct SpawnsHeader {
     _unknown_2: u32,
     _unknown_3: u32,
     _unknown_4: u32,
-    devil_dagger_unlock_time: u32,
-    golden_dagger_unlock_time: u32,
-    silver_dagger_unlock_time: u32,
-    bronze_dagger_unlock_time: u32,
+    pub devil_dagger_unlock_time: u32,
+    pub golden_dagger_unlock_time: u32,
+    pub silver_dagger_unlock_time: u32,
+    pub bronze_dagger_unlock_time: u32,
     _unknown_5: u32,
-    spawns_count: u32
+    pub spawns_count: u32
 }
 
 impl SpawnsHeader {
@@ -51,45 +51,5 @@ impl SpawnsHeader {
 
         Self::new(devil_dagger_unlock_time, golden_dagger_unlock_time,
             silver_dagger_unlock_time, bronze_dagger_unlock_time, spawns_count)
-    }
-
-    pub fn get_devil_dagger_unlock_time(&self) -> u32 {
-        self.devil_dagger_unlock_time
-    }
-
-    pub fn get_golden_dagger_unlock_time(&self) -> u32 {
-        self.golden_dagger_unlock_time
-    }
-
-    pub fn get_silver_dagger_unlock_time(&self) -> u32 {
-        self.silver_dagger_unlock_time
-    }
-
-    pub fn get_bronze_dagger_unlock_time(&self) -> u32 {
-        self.bronze_dagger_unlock_time
-    }
-
-    pub fn get_spawns_count(&self) -> u32 {
-        self.spawns_count
-    }
-
-    pub fn set_devil_dagger_unlock_time(&mut self, val: u32) {
-        self.devil_dagger_unlock_time = val
-    }
-
-    pub fn set_golden_dagger_unlock_time(&mut self, val: u32) {
-        self.golden_dagger_unlock_time = val
-    }
-
-    pub fn set_silver_dagger_unlock_time(&mut self, val: u32) {
-        self.silver_dagger_unlock_time = val
-    }
-
-    pub fn set_bronze_dagger_unlock_time(&mut self, val: u32) {
-        self.bronze_dagger_unlock_time = val
-    }
-
-    pub fn set_spawns_count(&mut self, val: u32) {
-        self.spawns_count = val
     }
 }

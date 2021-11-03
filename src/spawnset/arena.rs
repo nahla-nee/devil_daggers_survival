@@ -1,7 +1,8 @@
 use crate::byte_reader::ByteReader;
+use crate::dd_error::DDError;
 
 pub struct Arena {
-    arena: [f32; 2601]
+    pub arena: [f32; 2601]
 }
 
 impl Arena {
@@ -11,16 +12,15 @@ impl Arena {
         }
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Arena {
+    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<Arena, DDError> {
         let mut arena = [0f32; 2601];
         unsafe {
-            byte_reader.get_chunk(arena.as_mut_ptr(), 2601)
-                .expect("Failed to read arena array, not enough data");
+            byte_reader.get_chunk(arena.as_mut_ptr(), 2601)?
         }
 
-        Arena {
+        Ok(Arena {
             arena
-        }
+        })
     }
 
     pub fn get_at(&self, x: usize, y: usize) -> f32 {

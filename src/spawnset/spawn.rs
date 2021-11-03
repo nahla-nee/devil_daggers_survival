@@ -3,8 +3,8 @@ use crate::byte_reader::ByteReader;
 use super::enemy_type::EnemyType;
 
 pub struct Spawn {
-    enemy_type: EnemyType,
-    spawn_delay: f32,
+    pub enemy_type: EnemyType,
+    pub spawn_delay: f32,
     _unknown_1: u32,
     _unknown_2: u32,
     _unknown_3: u32,
@@ -36,21 +36,5 @@ impl Spawn {
         byte_reader.skip_bytes(size_of::<u32>()*5);
 
         Spawn::new(enemy_type, spawn_delay)
-    }
-
-    pub fn get_enemy_type(&self) -> EnemyType {
-        self.enemy_type.clone()
-    }
-
-    pub fn get_spawn_delay(&self) -> f32 {
-        self.spawn_delay
-    }
-
-    pub fn set_enemy_type(&mut self, val: EnemyType) {
-        self.enemy_type = val;
-    }
-
-    pub fn set_spawn_delay(&mut self, val: f32) {
-        self.spawn_delay = val
     }
 }
