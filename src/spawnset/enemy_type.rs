@@ -29,6 +29,22 @@ impl EnemyType {
             _ => EnemyType::Empty
         }
     }
+
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Self::SquidI => 0,
+            Self::SquidII => 1,
+            Self::Centipede => 2,
+            Self::SpiderI => 3,
+            Self::Leviathan => 4,
+            Self::Gigapede => 5,
+            Self::SquidIII => 6,
+            Self::Thorn => 7,
+            Self::SpiderII => 8,
+            Self::Ghostpede => 9,
+            Self::Empty => -1
+        }
+    }
 }
 
 impl std::fmt::Display for EnemyType {
