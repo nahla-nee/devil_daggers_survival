@@ -43,17 +43,19 @@ impl Spawnset {
         
         let arena = Arena::from_byte_reader(&mut byte_reader)?;
         
-        let spawns_header = SpawnsHeader::from_byte_reader(&mut byte_reader);
+        let spawns_header = SpawnsHeader::from_byte_reader(&mut byte_reader)?;
         
         let spawns_count = spawns_header.spawns_count as usize;
         let spawns: Vec<Spawn> = (0..spawns_count)
-            .map(|_| Spawn::from_byte_reader(&mut byte_reader)).collect();
+            .map(|_| Spawn::from_byte_reader(&mut byte_reader))
+            .collect::<Result<Vec<_>,_>>()
+            .or_else(|e| Err(e))?;
 
         //check world ver
         let spawn_version = header.spawn_version;
         let mut settings = None;
         if spawn_version > 4 {
-            settings = Some(Settings::from_byte_reader(&mut byte_reader, spawn_version));
+            settings = Some(Settings::from_byte_reader(&mut byte_reader, spawn_version)?);
         }
 
         Ok(Spawnset::new(header, arena, spawns_header, spawns, settings))
@@ -100,7 +102,5 @@ impl Spawnset {
                 println!("\tget time start: {}", settings.time_start.unwrap());
             }
         }
-
-        println!("done!")
     }
 }

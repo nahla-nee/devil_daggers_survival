@@ -1,4 +1,5 @@
 use crate::byte_reader::ByteReader;
+use crate::dd_error::DDError;
 
 pub struct Settings {
     pub initial_hand: u8,
@@ -15,8 +16,9 @@ impl Settings {
         }
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader, spawn_ver: u32) -> Settings {
+    pub fn from_byte_reader(byte_reader: &mut ByteReader, spawn_ver: u32) -> Result<Settings, DDError> {
         if byte_reader.bytes_left() < 9 {
+            return Err(DDError::NotEnoughData)
         }
 
         let initial_hand = byte_reader.get_u8().unwrap();
@@ -26,6 +28,6 @@ impl Settings {
             time_start = Some(byte_reader.get_f32().unwrap());
         }
 
-        Self::new(initial_hand, additional_gems, time_start)
+        Ok(Self::new(initial_hand, additional_gems, time_start))
     }
 }

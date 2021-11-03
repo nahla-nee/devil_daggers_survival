@@ -1,4 +1,5 @@
 use crate::byte_reader::ByteReader;
+use crate::dd_error::DDError;
 use std::mem::size_of;
 
 pub struct SpawnsHeader {
@@ -32,8 +33,9 @@ impl SpawnsHeader {
         }
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> SpawnsHeader {
+    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<SpawnsHeader, DDError> {
         if byte_reader.bytes_left() < 40 {
+            return Err(DDError::NotEnoughData)
         }
 
         //dump initial unknown values
@@ -49,7 +51,7 @@ impl SpawnsHeader {
         
         let spawns_count = byte_reader.get_u32().unwrap();
 
-        Self::new(devil_dagger_unlock_time, golden_dagger_unlock_time,
-            silver_dagger_unlock_time, bronze_dagger_unlock_time, spawns_count)
+        Ok(Self::new(devil_dagger_unlock_time, golden_dagger_unlock_time,
+            silver_dagger_unlock_time, bronze_dagger_unlock_time, spawns_count))
     }
 }

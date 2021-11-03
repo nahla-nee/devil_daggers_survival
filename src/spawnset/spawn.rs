@@ -1,6 +1,7 @@
-use std::mem::size_of;
 use crate::byte_reader::ByteReader;
+use crate::dd_error::DDError;
 use super::enemy_type::EnemyType;
+use std::mem::size_of;
 
 pub struct Spawn {
     pub enemy_type: EnemyType,
@@ -25,8 +26,9 @@ impl Spawn {
         }
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Spawn {
+    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<Spawn, DDError> {
         if byte_reader.bytes_left() < 28 {
+            return Err(DDError::NotEnoughData)
         }
 
         let enemy_type = EnemyType::from_i32(byte_reader.get_i32().unwrap());
@@ -35,6 +37,6 @@ impl Spawn {
         //dump unknowns
         byte_reader.skip_bytes(size_of::<u32>()*5);
 
-        Spawn::new(enemy_type, spawn_delay)
+        Ok(Self::new(enemy_type, spawn_delay))
     }
 }
