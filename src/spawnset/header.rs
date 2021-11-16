@@ -1,6 +1,5 @@
 use std::io::{Write, Read, Seek, SeekFrom};
 use super::utils::*;
-use super::{arena::Arena, spawns_header, spawn::Spawn, settings::Settings};
 
 pub struct Header {
     pub spawn_version: i32,
