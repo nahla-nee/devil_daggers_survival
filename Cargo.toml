@@ -1,5 +1,5 @@
 [package]
-name = "rusty_devil_daggers_survival_editor"
+name = "devil_daggers_survival"
 version = "0.1.0"
 authors = ["Mustafa Hashim <zee.mzha@gmail.com>"]
 description = "A library to handle interacting with survival files from the game Devil Daggers"
