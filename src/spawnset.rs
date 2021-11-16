@@ -4,33 +4,31 @@ mod spawns_header;
 mod spawn;
 mod settings;
 mod enemy_type;
+mod utils;
 
 use std::path::Path;
+use std::io::Cursor;
 
 pub use header::Header;
 pub use arena::Arena;
-pub use spawns_header::SpawnsHeader;
 pub use spawn::Spawn;
 pub use settings::Settings;
 
-use crate::byte_reader::ByteReader;
 use crate::dd_error::DDError;
 
 pub struct Spawnset {
     pub header: Header,
     pub arena: Arena,
-    pub spawns_header: SpawnsHeader,
     pub spawns: Vec<Spawn>,
-    pub settings: Option<Settings>
+    pub settings: Settings
 }
 
 impl Spawnset {
-    pub fn new(header: Header, arena: Arena, spawns_header: SpawnsHeader, spawns: Vec<Spawn>,
-               settings: Option<Settings>) -> Spawnset {
+    pub fn new(header: Header, arena: Arena, spawns: Vec<Spawn>,
+               settings: Settings) -> Spawnset {
         Spawnset {
             header,
             arena,
-            spawns_header,
             spawns,
             settings
         }
@@ -38,74 +36,86 @@ impl Spawnset {
 
     pub fn read_from_file<P: AsRef<Path>>(path: &P) -> Result<Spawnset, DDError> {
         let contents = std::fs::read(path).or_else(|e| Err(DDError::IORead(e)))?;
+        let contents_size = contents.len();
+        // the minimum size we need, this will have to be continously update as we get more info
+        let mut needed_size = Header::size()+Arena::size();
 
-        let mut byte_reader = ByteReader::new(contents);
-        
-        let header = Header::from_byte_reader(&mut byte_reader)?;
-        
-        let arena = Arena::from_byte_reader(&mut byte_reader)?;
-        
-        let spawns_header = SpawnsHeader::from_byte_reader(&mut byte_reader)?;
-        
-        let spawns_count = spawns_header.spawns_count as usize;
+        if contents_size < needed_size {
+            return Err(DDError::NotEnoughDataRead);
+        }
+
+        let mut contents = Cursor::new(contents);
+
+        // we know we can read at least the header and the arena
+        let header = Header::from_reader(&mut contents);
+
+        let arena = Arena::from_reader(&mut contents);
+
+        // do we have enough data for the header?
+        needed_size = needed_size+spawns_header::size(header.world_version);
+        if contents_size < needed_size {
+            return Err(DDError::NotEnoughDataRead);
+        }
+
+        let spawns_count = spawns_header::from_reader(header.world_version, &mut contents) as usize;
+
+        // do we have enough data for the spawns and the settings?
+        needed_size = needed_size+Spawn::size()*spawns_count+Settings::size(header.spawn_version);
+        if contents_size < needed_size {
+            return Err(DDError::NotEnoughDataRead);
+        }
+
         let spawns: Vec<Spawn> = (0..spawns_count)
-            .map(|_| Spawn::from_byte_reader(&mut byte_reader))
-            .collect::<Result<Vec<_>,_>>()
-            .or_else(|e| Err(e))?;
+            .map(|_| Spawn::from_reader(&mut contents))
+            .collect::<Vec<_>>();
 
-        //check world ver
-        let spawn_version = header.spawn_version;
-        let settings = Settings::from_byte_reader(&mut byte_reader, spawn_version)?;
+        let settings = Settings::from_reader(header.spawn_version, &mut contents);
 
-        Ok(Spawnset::new(header, arena, spawns_header, spawns, settings))
+        Ok(Spawnset::new(header, arena, spawns, settings))
     }
 
     pub fn write_to_file<P: AsRef<Path>>(&self, path: &P) -> Result<(), DDError> {
-        //header: 36 bytes
-        //arena: 51*51*4 bytes
-        //spawns header: 40 bytes
-        //each spawn: 28 bytes
-        //settings: doesn't exist, is 9 or 5 bytes, allocate 9 and decide later
-        let mut data: Vec<u8> = vec![0u8; self.calculate_size()];
+        // header: 36 bytes
+        // arena: 51*51*4 bytes
+        // spawns header: 40 or 36 bytes
+        // each spawn: 28 bytes
+        // settings: doesn't exist, or is 9 or 5 bytes
+        let contents: Vec<u8> = vec![0u8; self.calculate_size()];
+        let mut contents = Cursor::new(contents);
 
-        let mut data_written = 0;
+        self.header.to_writer(&mut contents);
 
-        self.header.to_byte_slice(&mut data[0..data_written+Header::size()])?;
-        data_written = Header::size();
+        self.arena.to_writer(&mut contents);
 
-        self.arena.to_byte_slice(&mut data[data_written..data_written+Arena::size()])?;
-        data_written = data_written+Arena::size();
-
-        self.spawns_header.to_byte_slice(&mut data[data_written..data_written+SpawnsHeader::size()])?;
-        data_written = data_written+SpawnsHeader::size();
+        spawns_header::to_writer(self.spawns.len().try_into().unwrap(),
+            self.header.world_version, &mut contents);
 
         for spawn in &self.spawns {
-            spawn.to_byte_slice(&mut data[data_written..data_written+Spawn::size()])?;
-            data_written = data_written+Spawn::size();
+            spawn.to_writer(&mut contents);
         }
 
-        let spawn_version = self.header.spawn_version;
-        let settings_size = Settings::size_from_spawn_ver(spawn_version);
-        if self.settings.is_some(){
-            self.settings.as_ref().unwrap().to_byte_slice(&mut data[data_written..data_written+settings_size], spawn_version)?;
-        }
+        self.settings.to_writer(self.header.spawn_version, &mut contents);
 
-        std::fs::write(path, data.as_slice()).or_else(|e| Err(DDError::IOWrite(e)))?;
+        std::fs::write(path, contents.get_ref())
+            .or_else(|e| Err(DDError::IOWrite(e)))?;
 
         Ok(())
     }
 
+    pub fn to_components(self) -> (Header, Arena, Vec<Spawn>, Settings) {
+        (self.header, self.arena, self.spawns, self.settings)
+    }
+
     pub fn calculate_size(&self) -> usize {
-        Header::size()+Arena::size()+SpawnsHeader::size()+self.spawns.len()*Spawn::size()
-        +Settings::size_from_spawn_ver(self.header.spawn_version)
+        Header::size()+Arena::size()+spawns_header::size(self.header.world_version)
+        +self.spawns.len()*Spawn::size()+
+        Settings::size(self.header.spawn_version)
     }
 
     pub fn print(&self) {
         self.print_header();
         println!();
         self.print_arena();
-        println!();
-        self.print_spawns_header();
         println!();
         self.print_spawns();
         println!();
@@ -133,17 +143,8 @@ impl Spawnset {
         }
     }
 
-    pub fn print_spawns_header(&self) {
-        println!("Spawns header:");
-        println!("\tdevil dagger unlock time: {}", self.spawns_header.devil_dagger_unlock_time);
-        println!("\tgolden dagger unlock time: {}", self.spawns_header.golden_dagger_unlock_time);
-        println!("\tsilver dagger unlock time: {}", self.spawns_header.silver_dagger_unlock_time);
-        println!("\tbronze dagger unlock time: {}", self.spawns_header.bronze_dagger_unlock_time);
-        println!("\tspawns count: {}", self.spawns_header.spawns_count);
-    }
-
     pub fn print_spawns(&self) {
-        println!("Spawns:");
+        println!("Spawns: {}", self.spawns.len());
         for spawn in &self.spawns {
             println!("\tenemy type: {}", spawn.enemy_type);
             println!("\tspawn delay: {:.1}", spawn.spawn_delay);
@@ -152,13 +153,10 @@ impl Spawnset {
 
     pub fn print_settings(&self) {
         if self.header.spawn_version > 4 {
-            let settings = self.settings.as_ref().unwrap();
             println!("Settings:");
-            println!("\tInitial hand upgrade: {}", settings.initial_hand);
-            println!("\tAdditional gems: {}", settings.additional_gems);
-            if settings.time_start.is_some() {
-                println!("\tget time start: {}", settings.time_start.unwrap());
-            }
+            println!("\tInitial hand upgrade: {}", self.settings.initial_hand);
+            println!("\tAdditional gems: {}", self.settings.additional_gems);
+            println!("\tget time start: {}", self.settings.time_start);
         }
     }
 }

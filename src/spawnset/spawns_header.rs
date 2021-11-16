@@ -1,76 +1,38 @@
-use crate::byte_reader::ByteReader;
-use crate::dd_error::DDError;
-use std::mem::size_of;
+use std::{io::{Write, Read, Seek, SeekFrom}, mem::size_of};
+use super::utils::*;
 
-pub struct SpawnsHeader {
-    _unknown_1: i32,
-    _unknown_2: i32,
-    _unknown_3: i32,
-    _unknown_4: i32,
-    pub devil_dagger_unlock_time: i32,
-    pub golden_dagger_unlock_time: i32,
-    pub silver_dagger_unlock_time: i32,
-    pub bronze_dagger_unlock_time: i32,
-    _unknown_5: i32,
-    pub spawns_count: i32
-}
 
-impl SpawnsHeader {
-    pub fn new(devil_dagger_unlock_time: i32, golden_dagger_unlock_time: i32,
-               silver_dagger_unlock_time: i32, bronze_dagger_unlock_time: i32, spawns_count: i32)
-        -> SpawnsHeader {
-        SpawnsHeader {
-            _unknown_1: 0,
-            _unknown_2: 0,
-            _unknown_3: 0,
-            _unknown_4: 0x00000001,
-            devil_dagger_unlock_time,
-            golden_dagger_unlock_time,
-            silver_dagger_unlock_time,
-            bronze_dagger_unlock_time,
-            _unknown_5: 0,
-            spawns_count
-        }
+pub fn size(world_version: i32) -> usize {
+    if world_version == 8 {
+        36
     }
-
-    pub fn size() -> usize {
+    else {
         40
     }
+}
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<SpawnsHeader, DDError> {
-        //dump initial unknown values
-        byte_reader.skip_bytes(size_of::<i32>()*4);
+pub fn from_reader<R: Read + Seek>(world_version: i32, reader: &mut R) -> i32 {
+    // dump initial unknown/useless values
+    let skip_byte_count = (size(world_version)-size_of::<i32>()).try_into().unwrap(); // shouldn't ever fail
+    let _ = reader.seek(SeekFrom::Current(skip_byte_count));
 
-        let devil_dagger_unlock_time = byte_reader.get_i32()?;
-        let golden_dagger_unlock_time = byte_reader.get_i32()?;
-        let silver_dagger_unlock_time = byte_reader.get_i32()?;
-        let bronze_dagger_unlock_time = byte_reader.get_i32()?;
-        
-        //dump one more unknown
-        byte_reader.skip_bytes(size_of::<i32>());
-        
-        let spawns_count = byte_reader.get_i32()?;
+    // Spawns count
+    get_i32(reader)
+}
 
-        Ok(Self::new(devil_dagger_unlock_time, golden_dagger_unlock_time,
-            silver_dagger_unlock_time, bronze_dagger_unlock_time, spawns_count))
+pub fn to_writer<W: Write>(spawns_count: i32, world_version: i32, writer: &mut W) {
+    let _ = writer.write(&0u32.to_le_bytes());
+    let _ = writer.write(&0u32.to_le_bytes());
+    let _ = writer.write(&0u32.to_le_bytes());
+    let _ = writer.write(&0x00000001u32.to_le_bytes());
+    let _ = writer.write(&0x000001F4u32.to_le_bytes());
+    let _ = writer.write(&0x000000FAu32.to_le_bytes());
+    let _ = writer.write(&0x00000078u32.to_le_bytes());
+    let _ = writer.write(&0x0000003Cu32.to_le_bytes());
+
+    if world_version != 8 {
+        let _ = writer.write(&0u32.to_le_bytes());
     }
 
-    pub fn to_byte_slice(&self, byte_slice: &mut [u8]) -> Result<(), DDError> {
-        if byte_slice.len() < Self::size() {
-            return Err(DDError::NotEnoughDataWrite)
-        }
-
-        byte_slice[0..4].copy_from_slice(&self._unknown_1.to_le_bytes());
-        byte_slice[4..8].copy_from_slice(&self._unknown_2.to_le_bytes());
-        byte_slice[8..12].copy_from_slice(&self._unknown_3.to_le_bytes());
-        byte_slice[12..16].copy_from_slice(&self._unknown_4.to_le_bytes());
-        byte_slice[16..20].copy_from_slice(&self.devil_dagger_unlock_time.to_le_bytes());
-        byte_slice[20..24].copy_from_slice(&self.golden_dagger_unlock_time.to_le_bytes());
-        byte_slice[24..28].copy_from_slice(&self.silver_dagger_unlock_time.to_le_bytes());
-        byte_slice[28..32].copy_from_slice(&self.bronze_dagger_unlock_time.to_le_bytes());
-        byte_slice[32..36].copy_from_slice(&self._unknown_5.to_le_bytes());
-        byte_slice[36..40].copy_from_slice(&self.spawns_count.to_le_bytes());
-
-        Ok(())
-    }
+    let _ = writer.write(&spawns_count.to_le_bytes());
 }

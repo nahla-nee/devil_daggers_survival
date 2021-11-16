@@ -1,5 +1,6 @@
-use crate::byte_reader::ByteReader;
-use crate::dd_error::DDError;
+use std::io::{Write, Read, Seek, SeekFrom};
+use super::utils::*;
+use super::{arena::Arena, spawns_header, spawn::Spawn, settings::Settings};
 
 pub struct Header {
     pub spawn_version: i32,
@@ -8,9 +9,7 @@ pub struct Header {
     pub shrink_start: f32,
     pub shrink_rate: f32,
     pub brightness: f32,
-    pub game_mode: i32,
-    _unknown_1: u32,
-    _unknown_2: u32
+    pub game_mode: i32
 }
 
 impl Header {
@@ -23,9 +22,7 @@ impl Header {
             shrink_start,
             shrink_rate,
             brightness,
-            game_mode,
-            _unknown_1: 0x00000033,
-            _unknown_2: 0x00000001
+            game_mode
         }
     }
 
@@ -33,36 +30,30 @@ impl Header {
         36
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<Header, DDError> {
-        let spawn_version = byte_reader.get_i32()?;
-        let world_version = byte_reader.get_i32()?;
-        let shrink_end = byte_reader.get_f32()?;
-        let shrink_start = byte_reader.get_f32()?;
-        let shrink_rate = byte_reader.get_f32()?;
-        let brightness = byte_reader.get_f32()?;
-        let game_mode = byte_reader.get_i32()?;
+    pub fn from_reader<R: Read + Seek>(reader: &mut R) -> Header {
+        let spawn_version = get_i32(reader);
+        let world_version = get_i32(reader);
+        let shrink_end = get_f32(reader);
+        let shrink_start = get_f32(reader);
+        let shrink_rate = get_f32(reader);
+        let brightness = get_f32(reader);
+        let game_mode = get_i32(reader);
 
-        byte_reader.skip_bytes(8);
+        let _ = reader.seek(SeekFrom::Current(8));
 
-        Ok(Self::new(spawn_version, world_version, shrink_end, shrink_start,
-                  shrink_rate, brightness, game_mode))
+        Self::new(spawn_version, world_version, shrink_end, shrink_start,
+                  shrink_rate, brightness, game_mode)
     }
 
-    pub fn to_byte_slice(&self, byte_slice: &mut [u8]) -> Result<(), DDError> {
-        if byte_slice.len() < Self::size() {
-            return Err(DDError::NotEnoughDataWrite)
-        }
-
-        byte_slice[0..4].copy_from_slice(&self.spawn_version.to_le_bytes());
-        byte_slice[4..8].copy_from_slice(&self.world_version.to_le_bytes());
-        byte_slice[8..12].copy_from_slice(&self.shrink_end.to_le_bytes());
-        byte_slice[12..16].copy_from_slice(&self.shrink_start.to_le_bytes());
-        byte_slice[16..20].copy_from_slice(&self.shrink_rate.to_le_bytes());
-        byte_slice[20..24].copy_from_slice(&self.brightness.to_le_bytes());
-        byte_slice[24..28].copy_from_slice(&self.game_mode.to_le_bytes());
-        byte_slice[28..32].copy_from_slice(&self._unknown_1.to_le_bytes());
-        byte_slice[32..36].copy_from_slice(&self._unknown_2.to_le_bytes());
-
-        Ok(())
+    pub fn to_writer<W: Write>(&self, writer: &mut W) {
+        let _ = writer.write(&self.spawn_version.to_le_bytes());
+        let _ = writer.write(&self.world_version.to_le_bytes());
+        let _ = writer.write(&self.shrink_end.to_le_bytes());
+        let _ = writer.write(&self.shrink_start.to_le_bytes());
+        let _ = writer.write(&self.shrink_rate.to_le_bytes());
+        let _ = writer.write(&self.brightness.to_le_bytes());
+        let _ = writer.write(&self.game_mode.to_le_bytes());
+        let _ = writer.write(&0x00000033u32.to_le_bytes());
+        let _ = writer.write(&0x00000001u32.to_le_bytes());
     }
 }

@@ -1,15 +1,13 @@
-use crate::byte_reader::ByteReader;
-use crate::dd_error::DDError;
-use std::slice;
+use std::{io::{Read, Seek, Write}, mem::size_of};
 
 pub struct Arena {
-    pub arena: [f32; 51*51]
+    pub arena: Vec<f32>
 }
 
 impl Arena {
     pub fn new() -> Arena {
         Arena {
-            arena: [0f32; 51*51]
+            arena: vec![0f32; 51*51]
         }
     }
 
@@ -17,29 +15,27 @@ impl Arena {
         51*51*4
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<Arena, DDError> {
-        let mut arena = [0f32; 51*51];
+    pub fn from_reader<R: Read + Seek>(reader: &mut R) -> Arena {
+        let arena_size = 51*51;
+        let arena = Vec::with_capacity(arena_size);
         unsafe {
-            byte_reader.get_chunk(arena.as_mut_ptr(), 51*51)?;
-        }
+            let mut arena_slice = std::slice::from_raw_parts_mut(arena.as_ptr() as *mut u8,
+            arena_size*size_of::<f32>());
+            let _ = reader.read(&mut arena_slice);
+        };
 
-        Ok(Arena {
+        Arena {
             arena
-        })
+        }
     }
 
-    pub fn to_byte_slice(&self, byte_slice: &mut [u8]) -> Result<(), DDError> {
-        if byte_slice.len() < Self::size() {
-            return Err(DDError::NotEnoughDataWrite)
-        }
-
-        let arena = unsafe {
-            let arena_ptr = self.arena.as_ptr() as *const u8;
-            slice::from_raw_parts(arena_ptr, self.arena.len()*4)
+    pub fn to_writer<W: Write>(&self, writer: &mut W) {
+        let arena_size = 51*51;
+        unsafe {
+            let arena_slice = std::slice::from_raw_parts(self.arena.as_ptr() as *const u8,
+            arena_size*size_of::<f32>());
+            let _ = writer.write(&arena_slice);
         };
-        byte_slice.copy_from_slice(arena);
-
-        Ok(())
     }
 
     pub fn get_at(&self, x: usize, y: usize) -> f32 {

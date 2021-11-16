@@ -1,7 +1,6 @@
-use crate::byte_reader::ByteReader;
-use crate::dd_error::DDError;
+use std::io::{Write, Read, Seek, SeekFrom};
 use super::enemy_type::EnemyType;
-use std::mem::size_of;
+use super::utils::*;
 
 pub struct Spawn {
     pub enemy_type: EnemyType,
@@ -30,29 +29,23 @@ impl Spawn {
         28
     }
 
-    pub fn from_byte_reader(byte_reader: &mut ByteReader) -> Result<Spawn, DDError> {
-        let enemy_type = EnemyType::from_i32(byte_reader.get_i32()?);
-        let spawn_delay = byte_reader.get_f32()?;
+    pub fn from_reader<R: Read + Seek>(reader: &mut R) -> Spawn {
+        let enemy_type = EnemyType::from_i32(get_i32(reader));
+        let spawn_delay = get_f32(reader);
 
-        //dump unknowns
-        byte_reader.skip_bytes(size_of::<i32>()*5);
+        let _ = reader.seek(SeekFrom::Current(20));
 
-        Ok(Self::new(enemy_type, spawn_delay))
+        Spawn::new(enemy_type, spawn_delay)
     }
 
-    pub fn to_byte_slice(&self, byte_slice: &mut [u8]) -> Result<(), DDError> {
-        if byte_slice.len() < Self::size() {
-            return Err(DDError::NotEnoughDataWrite)
-        }
+    pub fn to_writer<W: Write>(&self, writer: &mut W) {
+        let _ = writer.write(&self.enemy_type.to_i32().to_le_bytes());
+        let _ = writer.write(&self.spawn_delay.to_le_bytes());
 
-        byte_slice[0..4].copy_from_slice(&self.enemy_type.to_i32().to_le_bytes());
-        byte_slice[4..8].copy_from_slice(&self.spawn_delay.to_le_bytes());
-        byte_slice[8..12].copy_from_slice(&self._unknown_1.to_le_bytes());
-        byte_slice[12..16].copy_from_slice(&self._unknown_2.to_le_bytes());
-        byte_slice[16..20].copy_from_slice(&self._unknown_3.to_le_bytes());
-        byte_slice[20..24].copy_from_slice(&self._unknown_4.to_le_bytes());
-        byte_slice[24..28].copy_from_slice(&self._unknown_5.to_le_bytes());
-
-        Ok(())
+        let _ = writer.write(&0u32.to_le_bytes());
+        let _ = writer.write(&0x00000003u32.to_le_bytes());
+        let _ = writer.write(&0u32.to_le_bytes());
+        let _ = writer.write(&0x41F00000u32.to_le_bytes());
+        let _ = writer.write(&0x0000000Au32.to_le_bytes());
     }
 }
