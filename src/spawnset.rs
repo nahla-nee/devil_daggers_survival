@@ -13,6 +13,7 @@ pub use header::Header;
 pub use arena::Arena;
 pub use spawn::Spawn;
 pub use settings::Settings;
+pub use enemy_type::EnemyType;
 
 use crate::dd_error::DDError;
 
