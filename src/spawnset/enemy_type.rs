@@ -1,3 +1,6 @@
+#[cfg(feature = "json_coding")]
+use serde::{Serialize, Deserialize};
+
 #[derive(Clone)]
 #[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub enum EnemyType {

@@ -1,5 +1,8 @@
 use std::{io::{Read, Seek, Write}, mem::size_of};
 
+#[cfg(feature = "json_coding")]
+use serde::{Serialize, Deserialize};
+
 #[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Arena {
     pub arena: Vec<f32>

@@ -17,6 +17,9 @@ pub use enemy_type::EnemyType;
 
 use crate::dd_error::DDError;
 
+#[cfg(feature = "json_coding")]
+use serde::{Serialize, Deserialize};
+
 #[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Spawnset {
     pub header: Header,

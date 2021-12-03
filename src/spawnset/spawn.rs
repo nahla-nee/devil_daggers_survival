@@ -2,6 +2,9 @@ use std::io::{Write, Read, Seek, SeekFrom};
 use super::enemy_type::EnemyType;
 use super::utils::*;
 
+#[cfg(feature = "json_coding")]
+use serde::{Serialize, Deserialize};
+
 #[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Spawn {
     pub enemy_type: EnemyType,
