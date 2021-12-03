@@ -1,4 +1,4 @@
-use std::{io::{Read, Seek, Write}, mem::size_of};
+use std::{io::{Read, Seek, Write}, mem::{size_of, align_of}};
 
 #[cfg(feature = "json_coding")]
 use serde::{Serialize, Deserialize};
@@ -21,11 +21,13 @@ impl Arena {
 
     pub fn from_reader<R: Read + Seek>(reader: &mut R) -> Arena {
         let arena_size = 51*51;
-        let arena = Vec::with_capacity(arena_size);
+        let arena_byte_size = arena_size*size_of::<f32>();
+        let mut arena = vec![0.0f32; arena_size];
+
         unsafe {
-            let mut arena_slice = std::slice::from_raw_parts_mut(arena.as_ptr() as *mut u8,
-            arena_size*size_of::<f32>());
-            let _ = reader.read(&mut arena_slice);
+            let mut arena_slice = std::slice::from_raw_parts_mut(arena.as_mut_ptr() as *mut u8,
+            arena_byte_size);
+            let _ = reader.read_exact(&mut arena_slice);
         };
 
         Arena {

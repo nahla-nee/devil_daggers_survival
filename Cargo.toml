@@ -1,6 +1,6 @@
 [package]
 name = "devil_daggers_survival"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Mustafa Hashim <zee.mzha@gmail.com>"]
 description = "A library to handle interacting with survival files from the game Devil Daggers"
 edition = "2021"
