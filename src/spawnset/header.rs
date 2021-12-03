@@ -1,6 +1,7 @@
 use std::io::{Write, Read, Seek, SeekFrom};
 use super::utils::*;
 
+#[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Header {
     pub spawn_version: i32,
     pub world_version: i32,

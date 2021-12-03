@@ -1,7 +1,6 @@
 use std::{io::{Write, Read, Seek, SeekFrom}, mem::size_of};
 use super::utils::*;
 
-
 pub fn size(world_version: i32) -> usize {
     if world_version == 8 {
         36

@@ -17,6 +17,7 @@ pub use enemy_type::EnemyType;
 
 use crate::dd_error::DDError;
 
+#[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Spawnset {
     pub header: Header,
     pub arena: Arena,
@@ -25,6 +26,8 @@ pub struct Spawnset {
 }
 
 impl Spawnset {
+    const DEFAULT_SPAWN: &'static [u8] = include_bytes!("../assets/survival");
+
     pub fn new(header: Header, arena: Arena, spawns: Vec<Spawn>,
                settings: Settings) -> Spawnset {
         Spawnset {
@@ -35,8 +38,16 @@ impl Spawnset {
         }
     }
 
+    pub fn default_spawn() -> Result<Spawnset, DDError> {
+        Self::read_from_bytes(Self::DEFAULT_SPAWN)
+    }
+
     pub fn read_from_file<P: AsRef<Path>>(path: &P) -> Result<Spawnset, DDError> {
         let contents = std::fs::read(path).or_else(|e| Err(DDError::IORead(e)))?;
+        Self::read_from_bytes(&contents)
+    }
+
+    pub fn read_from_bytes(contents: &[u8]) -> Result<Spawnset, DDError> {
         let contents_size = contents.len();
         // the minimum size we need, this will have to be continously update as we get more info
         let mut needed_size = Header::size()+Arena::size();

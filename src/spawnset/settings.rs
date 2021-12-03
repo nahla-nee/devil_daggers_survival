@@ -1,6 +1,7 @@
 use std::io::{Write, Read};
 use super::utils::*;
 
+#[cfg_attr(feature = "json_coding", derive(Serialize, Deserialize))]
 pub struct Settings {
     pub initial_hand: i8,
     pub additional_gems: i32,
